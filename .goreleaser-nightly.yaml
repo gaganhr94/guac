@@ -131,6 +131,13 @@ builds:
     ignore:
       - goos: windows
         goarch: arm64
+  - main: ./cmd/guacrest
+    id: guacrest
+    binary: guacrest-{{ .Os }}-{{ .Arch }}
+    ldflags:
+      - -X {{.Env.PKG}}.Commit={{.FullCommit}}
+      - -X {{.Env.PKG}}.Date={{.Date}}
+      - -X {{.Env.PKG}}.Version={{.Summary}}
 
 universal_binaries:
   - replace: true
@@ -158,6 +165,11 @@ universal_binaries:
     id: guacgql
     ids:
       - guacgql
+  - replace: true
+    name_template: guacrest
+    id: guacrest
+    ids:
+      - guacrest
 
 sboms:
   - id: bins
@@ -199,7 +211,7 @@ changelog:
       - "^docs:"
       - "^test:"
 
-# Anything above this line should be identical to .goreleaser.yaml 
+# Anything above this line should be identical to .goreleaser.yaml
 # The following are specifically for nightly build
 # Without Goreleaser Pro, we have to replicate this config file for different builds
 release:
