@@ -63,7 +63,7 @@ services:
       - --data-dir=/data
     restart: on-failure
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:2379/pd/api/v1/health"]
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:2379/pd/api/v1/members"]
       interval: 10s
       timeout: 10s
       retries: 3
