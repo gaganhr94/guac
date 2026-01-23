@@ -51,12 +51,6 @@ jobs:
         uses: ariga/setup-atlas@d52cd13fed38eca914fa57071155a4644fd6f820 # v0.2
       - name: Setup the project
         run: go mod download
-      - name: Free disk space
-        shell: bash
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/local/share/boost
       - name: Run backends
         shell: bash
         run: |
@@ -65,10 +59,41 @@ jobs:
           docker compose up -d
           sleep 10
           echo "backends started"
+          echo ""
+          echo "=== PD Container Logs ==="
+          docker logs backend-pd-1 || true
+          echo ""
+          echo "=== TiKV Container Logs ==="
+          docker logs backend-tikv-1 || true
+          echo ""
+          echo "=== Docker Compose Status ==="
+          docker compose ps
       - name: Run integration tests
         env:
             ENT_TEST_DATABASE_URL: 'postgresql://guac:guac@localhost/guac?sslmode=disable'
         run: make integration-test
+      - name: Show container logs on failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          cd internal/testing/backend
+          echo "=== Docker Compose Status ==="
+          docker compose ps
+          echo ""
+          echo "=== PD Container Logs ==="
+          docker logs backend-pd-1 || true
+          echo ""
+          echo "=== TiKV Container Logs ==="
+          docker logs backend-tikv-1 || true
+          echo ""
+          echo "=== Redis Container Logs ==="
+          docker logs backend-redis-1 || true
+          echo ""
+          echo "=== ArangoDB Container Logs ==="
+          docker logs backend-arangodb-1 || true
+          echo ""
+          echo "=== Postgres Container Logs ==="
+          docker logs backend-postgres-1 || true
 
   end-to-end:
     name: E2E
