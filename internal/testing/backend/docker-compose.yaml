@@ -47,7 +47,7 @@ services:
       start_period: 1s
   pd:
     networks: [frontend]
-    image: docker.io/pingcap/pd:v8.5.1
+    image: docker.io/pingcap/pd:v7.5.7
     ports:
       - "2379:2379"
     volumes:
@@ -70,7 +70,7 @@ services:
       start_period: 120s
   tikv:
     networks: [frontend]
-    image: docker.io/pingcap/tikv:v8.5.1
+    image: docker.io/pingcap/tikv:v7.5.7
     volumes:
       - tikv_guac_data:/data
     ports:
