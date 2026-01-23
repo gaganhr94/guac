@@ -62,7 +62,7 @@ services:
       - --data-dir=/data
     restart: on-failure
     healthcheck:
-      test: ["CMD", "curl", "-sf", "127.0.0.1:2379/pd/api/v1/stores"]
+      test: ["CMD", "curl", "-s", "-f", "http://127.0.0.1:2379/pd/api/v1/stores"]
       interval: 10s
       timeout: 10s
       retries: 50
