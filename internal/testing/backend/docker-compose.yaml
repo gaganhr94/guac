@@ -80,7 +80,7 @@ services:
         hard: 90000
     command:
       - --addr=0.0.0.0:20160
-      - --advertise-addr=tikv:20160
+      - --advertise-addr=127.0.0.1:20160
       - --data-dir=/data
       - --pd=pd:2379
     depends_on:
