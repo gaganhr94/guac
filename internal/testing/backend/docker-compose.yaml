@@ -62,7 +62,7 @@ services:
       - --data-dir=/data
     restart: on-failure
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:2379/pd/api/v1/health"]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:2379/pd/api/v1/stores"]
       interval: 10s
       timeout: 10s
       retries: 50
@@ -73,13 +73,16 @@ services:
     volumes:
       - tikv_guac_data:/data
     ports:
-      - "20160:20160" 
+      - "20160:20160"
+    ulimits:
+      nofile:
+        soft: 90000
+        hard: 90000
     command:
       - --addr=0.0.0.0:20160
       - --advertise-addr=127.0.0.1:20160
       - --data-dir=/data
       - --pd=pd:2379
     depends_on:
-      pd:
-        condition: service_healthy
+      "pd"
     restart: on-failure
