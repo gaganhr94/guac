@@ -73,11 +73,7 @@ services:
     volumes:
       - tikv_guac_data:/data
     ports:
-      - "20160:20160"
-    ulimits:
-      nofile:
-        soft: 90000
-        hard: 90000
+      - "20160:20160" 
     command:
       - --addr=0.0.0.0:20160
       - --advertise-addr=127.0.0.1:20160
