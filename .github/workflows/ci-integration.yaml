@@ -51,6 +51,12 @@ jobs:
         uses: ariga/setup-atlas@d52cd13fed38eca914fa57071155a4644fd6f820 # v0.2
       - name: Setup the project
         run: go mod download
+      - name: Free disk space
+        shell: bash
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/boost
       - name: Run backends
         shell: bash
         run: |
