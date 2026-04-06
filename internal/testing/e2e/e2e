@@ -97,14 +97,21 @@ wipe_data() {
   fi
 }
 
-go run ${GUAC_DIR}"/cmd/guacingest" --add-vuln-on-ingest=true --add-license-on-ingest --add-eol-on-ingest &
-go run ${GUAC_DIR}"/cmd/guacone" collect deps_dev -p &
 go run ${GUAC_DIR}"/cmd/guaccsub" &
+
+echo "Waiting for collectsub to start..."
+sleep 15
+
+go run ${GUAC_DIR}"/cmd/guacingest" --add-vuln-on-ingest=true --add-license-on-ingest --add-eol-on-ingest --pubsub-addr=nats://127.0.0.1:4222 --blob-addr=file:///tmp/blobstore?no_tmp_dir=true --gql-addr=http://localhost:8080/query &
+go run ${GUAC_DIR}"/cmd/guacone" collect deps_dev -p --csub-addr=localhost:2782 --gql-addr=http://localhost:8080/query &
+
+echo @@@@ Waiting for background services to initialize
+sleep 30
 
 # Define ingestion commands
 declare -a ingestion_commands=(
-  "go run ${GUAC_DIR}/cmd/guacone collect files ${GUAC_DIR}/guac-data/docs/ --add-vuln-on-ingest=true --add-license-on-ingest --add-eol-on-ingest"
-  "go run ${GUAC_DIR}/cmd/guaccollect files ${GUAC_DIR}/guac-data/docs/ --service-poll=false"
+  "go run ${GUAC_DIR}/cmd/guacone collect files ${GUAC_DIR}/guac-data/docs/ --add-vuln-on-ingest=true --add-license-on-ingest --add-eol-on-ingest --gql-addr=http://localhost:8080/query"
+  "go run ${GUAC_DIR}/cmd/guaccollect files ${GUAC_DIR}/guac-data/docs/ --service-poll=false --pubsub-addr=nats://127.0.0.1:4222 --blob-addr=file:///tmp/blobstore?no_tmp_dir=true"
 )
 
 declare -A queryValues

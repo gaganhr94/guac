@@ -1681,7 +1681,23 @@ func startTestServer() (*http.Server, error) {
 	go func() {
 		logger.Infof("server finished: %s", server.ListenAndServe())
 	}()
-	return server, nil
+
+	// Wait for server to be ready
+	serverURL := "http://localhost:9090/query"
+	client := &http.Client{Timeout: 1 * time.Second}
+	for i := 0; i < 10; i++ {
+		req, err := http.NewRequest("POST", serverURL, nil)
+		if err == nil {
+			resp, err := client.Do(req)
+			if err == nil {
+				resp.Body.Close()
+				logger.Info("server is ready")
+				return server, nil
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil, fmt.Errorf("server did not start within timeout")
 }
 
 func getGraphqlTestServer() (*handler.Server, error) {
