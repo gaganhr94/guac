@@ -2260,6 +2260,9 @@ var (
 			  },
 			  "result":[
 				 {
+					"id":"GHSA-3pxv-7cmr-fjr4"
+				 },
+				 {
 					"id":"GHSA-7rjr-3q55-vv33"
 				 },
 				 {
@@ -2369,6 +2372,9 @@ var (
 			  },
 			  "result":[
 				 {
+					"id":"GHSA-3pxv-7cmr-fjr4"
+				 },
+				 {
 					"id":"GHSA-7rjr-3q55-vv33"
 				 },
 				 {
@@ -2431,6 +2437,12 @@ var (
 
 	//go:embed exampledata/cd-mock/cd-maven-iovertx.json
 	CDMavenIOVertxResponse []byte
+
+	//go:embed exampledata/osv-mock/osv-log4j-core-2.8.1.json
+	OSVLog4JResponse []byte
+
+	//go:embed exampledata/osv-mock/osv-vertx-web-common-4.3.7.json
+	OSVVertxWebCommonResponse []byte
 
 	VertxWebCommonAttestation = `{
 		"type": "https://in-toto.io/Statement/v1",
