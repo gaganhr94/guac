@@ -37,6 +37,18 @@ can take a look.
 Starting the GUAC services with our
 [docker compose quickstart](https://docs.guac.sh/setup/).
 
+### Try in Gitpod
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/guacsec/guac)
+
+Click the button above to launch a full GUAC stack (GraphQL, REST,
+collectsub, ingestor, NATS, and the deps_dev / osv / ClearlyDefined
+collectors) in a Gitpod workspace backed by the published GUAC release
+image -- no local setup required. The GraphQL playground previews
+automatically on port 8080 and the REST API is on 8081. See
+[`.gitpod.yml`](./.gitpod.yml) for the exact services brought up and
+for the one-line switch to the persistent ent/PostgreSQL backend.
+
 ## Docs
 
 All documentation for GUAC lives on [docs.guac.sh](https://docs.guac.sh), backed
