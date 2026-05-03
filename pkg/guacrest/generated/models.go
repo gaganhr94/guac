@@ -75,7 +75,12 @@ type BadRequest = Error
 type InternalServerError = Error
 
 // PackageNameList defines model for PackageNameList.
-type PackageNameList = []PackageName
+type PackageNameList struct {
+	PackageNameList []PackageName `json:"PackageNameList"`
+
+	// PaginationInfo Contains the cursor to retrieve more pages. If there are no more,  NextCursor will be nil.
+	PaginationInfo PaginationInfo `json:"PaginationInfo"`
+}
 
 // PurlList defines model for PurlList.
 type PurlList struct {
@@ -85,7 +90,11 @@ type PurlList struct {
 }
 
 // VulnerabilityList defines model for VulnerabilityList.
-type VulnerabilityList = []Vulnerability
+type VulnerabilityList struct {
+	// PaginationInfo Contains the cursor to retrieve more pages. If there are no more,  NextCursor will be nil.
+	PaginationInfo    PaginationInfo  `json:"PaginationInfo"`
+	VulnerabilityList []Vulnerability `json:"VulnerabilityList"`
+}
 
 // AnalyzeDependenciesParams defines parameters for AnalyzeDependencies.
 type AnalyzeDependenciesParams struct {
@@ -103,8 +112,45 @@ type AnalyzeDependenciesParams struct {
 // AnalyzeDependenciesParamsSort defines parameters for AnalyzeDependencies.
 type AnalyzeDependenciesParamsSort string
 
+// GetArtifactDepsParams defines parameters for GetArtifactDeps.
+type GetArtifactDepsParams struct {
+	// PaginationSpec The pagination configuration for the query.
+	//   * 'PageSize' specifies the number of results returned
+	//   * 'Cursor' is returned by previous calls and specifies what page to return
+	PaginationSpec *PaginationSpec `form:"paginationSpec,omitempty" json:"paginationSpec,omitempty"`
+}
+
+// GetArtifactVulnsParams defines parameters for GetArtifactVulns.
+type GetArtifactVulnsParams struct {
+	// PaginationSpec The pagination configuration for the query.
+	//   * 'PageSize' specifies the number of results returned
+	//   * 'Cursor' is returned by previous calls and specifies what page to return
+	PaginationSpec *PaginationSpec `form:"paginationSpec,omitempty" json:"paginationSpec,omitempty"`
+}
+
+// GetPackagePurlsParams defines parameters for GetPackagePurls.
+type GetPackagePurlsParams struct {
+	// PaginationSpec The pagination configuration for the query.
+	//   * 'PageSize' specifies the number of results returned
+	//   * 'Cursor' is returned by previous calls and specifies what page to return
+	PaginationSpec *PaginationSpec `form:"paginationSpec,omitempty" json:"paginationSpec,omitempty"`
+}
+
+// GetPackageDepsParams defines parameters for GetPackageDeps.
+type GetPackageDepsParams struct {
+	// PaginationSpec The pagination configuration for the query.
+	//   * 'PageSize' specifies the number of results returned
+	//   * 'Cursor' is returned by previous calls and specifies what page to return
+	PaginationSpec *PaginationSpec `form:"paginationSpec,omitempty" json:"paginationSpec,omitempty"`
+}
+
 // GetPackageVulnsParams defines parameters for GetPackageVulns.
 type GetPackageVulnsParams struct {
-	// IncludeDependencies A flag to include vulnerabilities of the dependencies. If true, the  response will include vulnerabilities for the purl and its dependencies  instead of the vulnerabilities of just the purl.
+	// IncludeDependencies A flag to include vulnerabilities of the dependencies. If true, the response will include vulnerabilities for the purl and its dependencies instead of the vulnerabilities of just the purl.
 	IncludeDependencies *bool `form:"includeDependencies,omitempty" json:"includeDependencies,omitempty"`
+
+	// PaginationSpec The pagination configuration for the query.
+	//   * 'PageSize' specifies the number of results returned
+	//   * 'Cursor' is returned by previous calls and specifies what page to return
+	PaginationSpec *PaginationSpec `form:"paginationSpec,omitempty" json:"paginationSpec,omitempty"`
 }
