@@ -95,16 +95,16 @@ type ClientInterface interface {
 	HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetArtifactDeps request
-	GetArtifactDeps(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetArtifactDeps(ctx context.Context, digest string, params *GetArtifactDepsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetArtifactVulns request
-	GetArtifactVulns(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetArtifactVulns(ctx context.Context, digest string, params *GetArtifactVulnsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPackagePurls request
-	GetPackagePurls(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetPackagePurls(ctx context.Context, purl string, params *GetPackagePurlsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPackageDeps request
-	GetPackageDeps(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetPackageDeps(ctx context.Context, purl string, params *GetPackageDepsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPackageVulns request
 	GetPackageVulns(ctx context.Context, purl string, params *GetPackageVulnsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -134,8 +134,8 @@ func (c *Client) HealthCheck(ctx context.Context, reqEditors ...RequestEditorFn)
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetArtifactDeps(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetArtifactDepsRequest(c.Server, digest)
+func (c *Client) GetArtifactDeps(ctx context.Context, digest string, params *GetArtifactDepsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetArtifactDepsRequest(c.Server, digest, params)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +146,8 @@ func (c *Client) GetArtifactDeps(ctx context.Context, digest string, reqEditors 
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetArtifactVulns(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetArtifactVulnsRequest(c.Server, digest)
+func (c *Client) GetArtifactVulns(ctx context.Context, digest string, params *GetArtifactVulnsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetArtifactVulnsRequest(c.Server, digest, params)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +158,8 @@ func (c *Client) GetArtifactVulns(ctx context.Context, digest string, reqEditors
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetPackagePurls(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPackagePurlsRequest(c.Server, purl)
+func (c *Client) GetPackagePurls(ctx context.Context, purl string, params *GetPackagePurlsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPackagePurlsRequest(c.Server, purl, params)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +170,8 @@ func (c *Client) GetPackagePurls(ctx context.Context, purl string, reqEditors ..
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetPackageDeps(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPackageDepsRequest(c.Server, purl)
+func (c *Client) GetPackageDeps(ctx context.Context, purl string, params *GetPackageDepsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPackageDepsRequest(c.Server, purl, params)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func NewHealthCheckRequest(server string) (*http.Request, error) {
 }
 
 // NewGetArtifactDepsRequest generates requests for GetArtifactDeps
-func NewGetArtifactDepsRequest(server string, digest string) (*http.Request, error) {
+func NewGetArtifactDepsRequest(server string, digest string, params *GetArtifactDepsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -308,6 +308,28 @@ func NewGetArtifactDepsRequest(server string, digest string) (*http.Request, err
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.PaginationSpec != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "paginationSpec", runtime.ParamLocationQuery, *params.PaginationSpec); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -317,7 +339,7 @@ func NewGetArtifactDepsRequest(server string, digest string) (*http.Request, err
 }
 
 // NewGetArtifactVulnsRequest generates requests for GetArtifactVulns
-func NewGetArtifactVulnsRequest(server string, digest string) (*http.Request, error) {
+func NewGetArtifactVulnsRequest(server string, digest string, params *GetArtifactVulnsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -342,6 +364,28 @@ func NewGetArtifactVulnsRequest(server string, digest string) (*http.Request, er
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.PaginationSpec != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "paginationSpec", runtime.ParamLocationQuery, *params.PaginationSpec); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -351,7 +395,7 @@ func NewGetArtifactVulnsRequest(server string, digest string) (*http.Request, er
 }
 
 // NewGetPackagePurlsRequest generates requests for GetPackagePurls
-func NewGetPackagePurlsRequest(server string, purl string) (*http.Request, error) {
+func NewGetPackagePurlsRequest(server string, purl string, params *GetPackagePurlsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -376,6 +420,28 @@ func NewGetPackagePurlsRequest(server string, purl string) (*http.Request, error
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.PaginationSpec != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "paginationSpec", runtime.ParamLocationQuery, *params.PaginationSpec); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -385,7 +451,7 @@ func NewGetPackagePurlsRequest(server string, purl string) (*http.Request, error
 }
 
 // NewGetPackageDepsRequest generates requests for GetPackageDeps
-func NewGetPackageDepsRequest(server string, purl string) (*http.Request, error) {
+func NewGetPackageDepsRequest(server string, purl string, params *GetPackageDepsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -408,6 +474,28 @@ func NewGetPackageDepsRequest(server string, purl string) (*http.Request, error)
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.PaginationSpec != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "paginationSpec", runtime.ParamLocationQuery, *params.PaginationSpec); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -450,6 +538,22 @@ func NewGetPackageVulnsRequest(server string, purl string, params *GetPackageVul
 		if params.IncludeDependencies != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "includeDependencies", runtime.ParamLocationQuery, *params.IncludeDependencies); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PaginationSpec != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "paginationSpec", runtime.ParamLocationQuery, *params.PaginationSpec); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -524,16 +628,16 @@ type ClientWithResponsesInterface interface {
 	HealthCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthCheckResponse, error)
 
 	// GetArtifactDepsWithResponse request
-	GetArtifactDepsWithResponse(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*GetArtifactDepsResponse, error)
+	GetArtifactDepsWithResponse(ctx context.Context, digest string, params *GetArtifactDepsParams, reqEditors ...RequestEditorFn) (*GetArtifactDepsResponse, error)
 
 	// GetArtifactVulnsWithResponse request
-	GetArtifactVulnsWithResponse(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*GetArtifactVulnsResponse, error)
+	GetArtifactVulnsWithResponse(ctx context.Context, digest string, params *GetArtifactVulnsParams, reqEditors ...RequestEditorFn) (*GetArtifactVulnsResponse, error)
 
 	// GetPackagePurlsWithResponse request
-	GetPackagePurlsWithResponse(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*GetPackagePurlsResponse, error)
+	GetPackagePurlsWithResponse(ctx context.Context, purl string, params *GetPackagePurlsParams, reqEditors ...RequestEditorFn) (*GetPackagePurlsResponse, error)
 
 	// GetPackageDepsWithResponse request
-	GetPackageDepsWithResponse(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*GetPackageDepsResponse, error)
+	GetPackageDepsWithResponse(ctx context.Context, purl string, params *GetPackageDepsParams, reqEditors ...RequestEditorFn) (*GetPackageDepsResponse, error)
 
 	// GetPackageVulnsWithResponse request
 	GetPackageVulnsWithResponse(ctx context.Context, purl string, params *GetPackageVulnsParams, reqEditors ...RequestEditorFn) (*GetPackageVulnsResponse, error)
@@ -730,8 +834,8 @@ func (c *ClientWithResponses) HealthCheckWithResponse(ctx context.Context, reqEd
 }
 
 // GetArtifactDepsWithResponse request returning *GetArtifactDepsResponse
-func (c *ClientWithResponses) GetArtifactDepsWithResponse(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*GetArtifactDepsResponse, error) {
-	rsp, err := c.GetArtifactDeps(ctx, digest, reqEditors...)
+func (c *ClientWithResponses) GetArtifactDepsWithResponse(ctx context.Context, digest string, params *GetArtifactDepsParams, reqEditors ...RequestEditorFn) (*GetArtifactDepsResponse, error) {
+	rsp, err := c.GetArtifactDeps(ctx, digest, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -739,8 +843,8 @@ func (c *ClientWithResponses) GetArtifactDepsWithResponse(ctx context.Context, d
 }
 
 // GetArtifactVulnsWithResponse request returning *GetArtifactVulnsResponse
-func (c *ClientWithResponses) GetArtifactVulnsWithResponse(ctx context.Context, digest string, reqEditors ...RequestEditorFn) (*GetArtifactVulnsResponse, error) {
-	rsp, err := c.GetArtifactVulns(ctx, digest, reqEditors...)
+func (c *ClientWithResponses) GetArtifactVulnsWithResponse(ctx context.Context, digest string, params *GetArtifactVulnsParams, reqEditors ...RequestEditorFn) (*GetArtifactVulnsResponse, error) {
+	rsp, err := c.GetArtifactVulns(ctx, digest, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -748,8 +852,8 @@ func (c *ClientWithResponses) GetArtifactVulnsWithResponse(ctx context.Context, 
 }
 
 // GetPackagePurlsWithResponse request returning *GetPackagePurlsResponse
-func (c *ClientWithResponses) GetPackagePurlsWithResponse(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*GetPackagePurlsResponse, error) {
-	rsp, err := c.GetPackagePurls(ctx, purl, reqEditors...)
+func (c *ClientWithResponses) GetPackagePurlsWithResponse(ctx context.Context, purl string, params *GetPackagePurlsParams, reqEditors ...RequestEditorFn) (*GetPackagePurlsResponse, error) {
+	rsp, err := c.GetPackagePurls(ctx, purl, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -757,8 +861,8 @@ func (c *ClientWithResponses) GetPackagePurlsWithResponse(ctx context.Context, p
 }
 
 // GetPackageDepsWithResponse request returning *GetPackageDepsResponse
-func (c *ClientWithResponses) GetPackageDepsWithResponse(ctx context.Context, purl string, reqEditors ...RequestEditorFn) (*GetPackageDepsResponse, error) {
-	rsp, err := c.GetPackageDeps(ctx, purl, reqEditors...)
+func (c *ClientWithResponses) GetPackageDepsWithResponse(ctx context.Context, purl string, params *GetPackageDepsParams, reqEditors ...RequestEditorFn) (*GetPackageDepsResponse, error) {
+	rsp, err := c.GetPackageDeps(ctx, purl, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

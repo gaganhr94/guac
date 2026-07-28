@@ -20,11 +20,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/guacsec/guac/pkg/dependencies"
 	gen "github.com/guacsec/guac/pkg/guacrest/generated"
+	"github.com/guacsec/guac/pkg/guacrest/pagination"
 	"github.com/guacsec/guac/pkg/logging"
 )
 
@@ -79,21 +82,35 @@ func (s *DefaultServer) AnalyzeDependencies(ctx context.Context, request gen.Ana
 			}, nil
 		}
 
-		var packageNames []gen.PackageName
-
+		packageNames := make([]gen.PackageName, 0, len(packages))
 		for _, p := range packages {
-			pac := p // have to do this because we don't want packageNames to keep on appending a pointer of the same variable p.
 			packageNames = append(packageNames, gen.PackageName{
-				Name:           pac.Name,
-				DependentCount: pac.DependentCount,
+				Name:           p.Name,
+				DependentCount: p.DependentCount,
 			})
 		}
+		// Stable secondary sort by Name so ties on DependentCount are deterministic
+		// across calls — required for pagination cursors to be valid.
+		sort.SliceStable(packageNames, func(i, j int) bool {
+			if packageNames[i].DependentCount != packageNames[j].DependentCount {
+				return packageNames[i].DependentCount > packageNames[j].DependentCount
+			}
+			return packageNames[i].Name < packageNames[j].Name
+		})
 
-		val := gen.AnalyzeDependencies200JSONResponse{
-			PackageNameListJSONResponse: packageNames,
+		page, info, err := pagination.Paginate(ctx, packageNames, request.Params.PaginationSpec)
+		if err != nil {
+			return gen.AnalyzeDependencies400JSONResponse{
+				BadRequestJSONResponse: gen.BadRequestJSONResponse{Message: err.Error()},
+			}, nil
 		}
 
-		return val, nil
+		return gen.AnalyzeDependencies200JSONResponse{
+			PackageNameListJSONResponse: gen.PackageNameListJSONResponse{
+				PaginationInfo:  info,
+				PackageNameList: page,
+			},
+		}, nil
 	case gen.Scorecard:
 		return nil, fmt.Errorf("scorecard sort is unimplemented")
 	default:
@@ -124,11 +141,18 @@ func (s *DefaultServer) GetPackagePurls(ctx context.Context, request gen.GetPack
 		}, nil
 	}
 
-	totalCount := len(purls)
+	sort.Strings(purls)
+	page, info, err := pagination.Paginate(ctx, purls, request.Params.PaginationSpec)
+	if err != nil {
+		return gen.GetPackagePurls400JSONResponse{
+			BadRequestJSONResponse: gen.BadRequestJSONResponse{Message: err.Error()},
+		}, nil
+	}
+
 	return gen.GetPackagePurls200JSONResponse{
 		PurlListJSONResponse: gen.PurlListJSONResponse{
-			PaginationInfo: gen.PaginationInfo{TotalCount: &totalCount},
-			PurlList:       purls,
+			PaginationInfo: info,
+			PurlList:       page,
 		},
 	}, nil
 }
@@ -161,8 +185,19 @@ func (s *DefaultServer) GetPackageVulns(ctx context.Context, request gen.GetPack
 		}, nil
 	}
 
+	sortVulns(vulns)
+	page, info, err := pagination.Paginate(ctx, vulns, request.Params.PaginationSpec)
+	if err != nil {
+		return gen.GetPackageVulns400JSONResponse{
+			BadRequestJSONResponse: gen.BadRequestJSONResponse{Message: err.Error()},
+		}, nil
+	}
+
 	return gen.GetPackageVulns200JSONResponse{
-		VulnerabilityListJSONResponse: vulns,
+		VulnerabilityListJSONResponse: gen.VulnerabilityListJSONResponse{
+			PaginationInfo:    info,
+			VulnerabilityList: page,
+		},
 	}, nil
 }
 
@@ -186,15 +221,25 @@ func (s *DefaultServer) GetPackageDeps(ctx context.Context, request gen.GetPacka
 		}
 	}
 
-	result := gen.GetPackageDeps200JSONResponse{}
-
+	depPurls := make([]string, 0, len(purls))
 	for _, depPurl := range purls {
-		result.PurlList = append(result.PurlList, depPurl)
+		depPurls = append(depPurls, depPurl)
 	}
-	totalCount := len(result.PurlList)
-	result.PaginationInfo = gen.PaginationInfo{TotalCount: &totalCount}
+	sort.Strings(depPurls)
 
-	return result, nil
+	page, info, err := pagination.Paginate(ctx, depPurls, request.Params.PaginationSpec)
+	if err != nil {
+		return gen.GetPackageDeps400JSONResponse{
+			BadRequestJSONResponse: gen.BadRequestJSONResponse{Message: err.Error()},
+		}, nil
+	}
+
+	return gen.GetPackageDeps200JSONResponse{
+		PurlListJSONResponse: gen.PurlListJSONResponse{
+			PaginationInfo: info,
+			PurlList:       page,
+		},
+	}, nil
 }
 
 func (s *DefaultServer) GetArtifactVulns(ctx context.Context, request gen.GetArtifactVulnsRequestObject) (gen.GetArtifactVulnsResponseObject, error) {
@@ -220,8 +265,19 @@ func (s *DefaultServer) GetArtifactVulns(ctx context.Context, request gen.GetArt
 		}, nil
 	}
 
+	sortVulns(vulns)
+	page, info, err := pagination.Paginate(ctx, vulns, request.Params.PaginationSpec)
+	if err != nil {
+		return gen.GetArtifactVulns400JSONResponse{
+			BadRequestJSONResponse: gen.BadRequestJSONResponse{Message: err.Error()},
+		}, nil
+	}
+
 	return gen.GetArtifactVulns200JSONResponse{
-		VulnerabilityListJSONResponse: vulns,
+		VulnerabilityListJSONResponse: gen.VulnerabilityListJSONResponse{
+			PaginationInfo:    info,
+			VulnerabilityList: page,
+		},
 	}, nil
 }
 
@@ -245,13 +301,36 @@ func (s *DefaultServer) GetArtifactDeps(ctx context.Context, request gen.GetArti
 		}
 	}
 
-	result := gen.GetArtifactDeps200JSONResponse{}
-
+	depPurls := make([]string, 0, len(purls))
 	for _, depPurl := range purls {
-		result.PurlList = append(result.PurlList, depPurl)
+		depPurls = append(depPurls, depPurl)
 	}
-	totalCount := len(result.PurlList)
-	result.PaginationInfo = gen.PaginationInfo{TotalCount: &totalCount}
+	sort.Strings(depPurls)
 
-	return result, nil
+	page, info, err := pagination.Paginate(ctx, depPurls, request.Params.PaginationSpec)
+	if err != nil {
+		return gen.GetArtifactDeps400JSONResponse{
+			BadRequestJSONResponse: gen.BadRequestJSONResponse{Message: err.Error()},
+		}, nil
+	}
+
+	return gen.GetArtifactDeps200JSONResponse{
+		PurlListJSONResponse: gen.PurlListJSONResponse{
+			PaginationInfo: info,
+			PurlList:       page,
+		},
+	}, nil
+}
+
+// sortVulns orders vulnerabilities deterministically so that pagination cursors
+// are stable across calls. The order is by purl, then by the joined vulnerability
+// IDs as a tiebreaker.
+func sortVulns(vulns []gen.Vulnerability) {
+	sort.Slice(vulns, func(i, j int) bool {
+		if vulns[i].Package != vulns[j].Package {
+			return vulns[i].Package < vulns[j].Package
+		}
+		return strings.Join(vulns[i].Vulnerability.VulnerabilityIDs, ",") <
+			strings.Join(vulns[j].Vulnerability.VulnerabilityIDs, ",")
+	})
 }

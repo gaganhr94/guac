@@ -24,16 +24,16 @@ type ServerInterface interface {
 	HealthCheck(w http.ResponseWriter, r *http.Request)
 	// Get dependencies for an artifact, identified by a digest
 	// (GET /v0/artifact/{digest}/dependencies)
-	GetArtifactDeps(w http.ResponseWriter, r *http.Request, digest string)
+	GetArtifactDeps(w http.ResponseWriter, r *http.Request, digest string, params GetArtifactDepsParams)
 	// Get vulnerabilities for an artifact, identified by a digest
 	// (GET /v0/artifact/{digest}/vulns)
-	GetArtifactVulns(w http.ResponseWriter, r *http.Request, digest string)
+	GetArtifactVulns(w http.ResponseWriter, r *http.Request, digest string, params GetArtifactVulnsParams)
 	// Get all purls related to the given purl
 	// (GET /v0/package/{purl})
-	GetPackagePurls(w http.ResponseWriter, r *http.Request, purl string)
+	GetPackagePurls(w http.ResponseWriter, r *http.Request, purl string, params GetPackagePurlsParams)
 	// Get dependencies for a specific Package URL (purl)
 	// (GET /v0/package/{purl}/dependencies)
-	GetPackageDeps(w http.ResponseWriter, r *http.Request, purl string)
+	GetPackageDeps(w http.ResponseWriter, r *http.Request, purl string, params GetPackageDepsParams)
 	// Get vulnerabilities for a Package URL (purl)
 	// (GET /v0/package/{purl}/vulns)
 	GetPackageVulns(w http.ResponseWriter, r *http.Request, purl string, params GetPackageVulnsParams)
@@ -57,25 +57,25 @@ func (_ Unimplemented) HealthCheck(w http.ResponseWriter, r *http.Request) {
 
 // Get dependencies for an artifact, identified by a digest
 // (GET /v0/artifact/{digest}/dependencies)
-func (_ Unimplemented) GetArtifactDeps(w http.ResponseWriter, r *http.Request, digest string) {
+func (_ Unimplemented) GetArtifactDeps(w http.ResponseWriter, r *http.Request, digest string, params GetArtifactDepsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get vulnerabilities for an artifact, identified by a digest
 // (GET /v0/artifact/{digest}/vulns)
-func (_ Unimplemented) GetArtifactVulns(w http.ResponseWriter, r *http.Request, digest string) {
+func (_ Unimplemented) GetArtifactVulns(w http.ResponseWriter, r *http.Request, digest string, params GetArtifactVulnsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get all purls related to the given purl
 // (GET /v0/package/{purl})
-func (_ Unimplemented) GetPackagePurls(w http.ResponseWriter, r *http.Request, purl string) {
+func (_ Unimplemented) GetPackagePurls(w http.ResponseWriter, r *http.Request, purl string, params GetPackagePurlsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get dependencies for a specific Package URL (purl)
 // (GET /v0/package/{purl}/dependencies)
-func (_ Unimplemented) GetPackageDeps(w http.ResponseWriter, r *http.Request, purl string) {
+func (_ Unimplemented) GetPackageDeps(w http.ResponseWriter, r *http.Request, purl string, params GetPackageDepsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -164,8 +164,19 @@ func (siw *ServerInterfaceWrapper) GetArtifactDeps(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetArtifactDepsParams
+
+	// ------------- Optional query parameter "paginationSpec" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "paginationSpec", r.URL.Query(), &params.PaginationSpec)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "paginationSpec", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetArtifactDeps(w, r, digest)
+		siw.Handler.GetArtifactDeps(w, r, digest, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -189,8 +200,19 @@ func (siw *ServerInterfaceWrapper) GetArtifactVulns(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetArtifactVulnsParams
+
+	// ------------- Optional query parameter "paginationSpec" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "paginationSpec", r.URL.Query(), &params.PaginationSpec)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "paginationSpec", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetArtifactVulns(w, r, digest)
+		siw.Handler.GetArtifactVulns(w, r, digest, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -214,8 +236,19 @@ func (siw *ServerInterfaceWrapper) GetPackagePurls(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPackagePurlsParams
+
+	// ------------- Optional query parameter "paginationSpec" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "paginationSpec", r.URL.Query(), &params.PaginationSpec)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "paginationSpec", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPackagePurls(w, r, purl)
+		siw.Handler.GetPackagePurls(w, r, purl, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -239,8 +272,19 @@ func (siw *ServerInterfaceWrapper) GetPackageDeps(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPackageDepsParams
+
+	// ------------- Optional query parameter "paginationSpec" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "paginationSpec", r.URL.Query(), &params.PaginationSpec)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "paginationSpec", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPackageDeps(w, r, purl)
+		siw.Handler.GetPackageDeps(w, r, purl, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -272,6 +316,14 @@ func (siw *ServerInterfaceWrapper) GetPackageVulns(w http.ResponseWriter, r *htt
 	err = runtime.BindQueryParameter("form", true, false, "includeDependencies", r.URL.Query(), &params.IncludeDependencies)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "includeDependencies", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "paginationSpec" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "paginationSpec", r.URL.Query(), &params.PaginationSpec)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "paginationSpec", Err: err})
 		return
 	}
 
@@ -430,7 +482,12 @@ type BadRequestJSONResponse Error
 
 type InternalServerErrorJSONResponse Error
 
-type PackageNameListJSONResponse []PackageName
+type PackageNameListJSONResponse struct {
+	PackageNameList []PackageName `json:"PackageNameList"`
+
+	// PaginationInfo Contains the cursor to retrieve more pages. If there are no more,  NextCursor will be nil.
+	PaginationInfo PaginationInfo `json:"PaginationInfo"`
+}
 
 type PurlListJSONResponse struct {
 	// PaginationInfo Contains the cursor to retrieve more pages. If there are no more,  NextCursor will be nil.
@@ -438,7 +495,11 @@ type PurlListJSONResponse struct {
 	PurlList       []Purl         `json:"PurlList"`
 }
 
-type VulnerabilityListJSONResponse []Vulnerability
+type VulnerabilityListJSONResponse struct {
+	// PaginationInfo Contains the cursor to retrieve more pages. If there are no more,  NextCursor will be nil.
+	PaginationInfo    PaginationInfo  `json:"PaginationInfo"`
+	VulnerabilityList []Vulnerability `json:"VulnerabilityList"`
+}
 
 type AnalyzeDependenciesRequestObject struct {
 	Params AnalyzeDependenciesParams
@@ -504,6 +565,7 @@ func (response HealthCheck200JSONResponse) VisitHealthCheckResponse(w http.Respo
 
 type GetArtifactDepsRequestObject struct {
 	Digest string `json:"digest"`
+	Params GetArtifactDepsParams
 }
 
 type GetArtifactDepsResponseObject interface {
@@ -550,6 +612,7 @@ func (response GetArtifactDeps502JSONResponse) VisitGetArtifactDepsResponse(w ht
 
 type GetArtifactVulnsRequestObject struct {
 	Digest string `json:"digest"`
+	Params GetArtifactVulnsParams
 }
 
 type GetArtifactVulnsResponseObject interface {
@@ -595,7 +658,8 @@ func (response GetArtifactVulns502JSONResponse) VisitGetArtifactVulnsResponse(w 
 }
 
 type GetPackagePurlsRequestObject struct {
-	Purl string `json:"purl"`
+	Purl   string `json:"purl"`
+	Params GetPackagePurlsParams
 }
 
 type GetPackagePurlsResponseObject interface {
@@ -641,7 +705,8 @@ func (response GetPackagePurls502JSONResponse) VisitGetPackagePurlsResponse(w ht
 }
 
 type GetPackageDepsRequestObject struct {
-	Purl string `json:"purl"`
+	Purl   string `json:"purl"`
+	Params GetPackageDepsParams
 }
 
 type GetPackageDepsResponseObject interface {
@@ -838,10 +903,11 @@ func (sh *strictHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetArtifactDeps operation middleware
-func (sh *strictHandler) GetArtifactDeps(w http.ResponseWriter, r *http.Request, digest string) {
+func (sh *strictHandler) GetArtifactDeps(w http.ResponseWriter, r *http.Request, digest string, params GetArtifactDepsParams) {
 	var request GetArtifactDepsRequestObject
 
 	request.Digest = digest
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetArtifactDeps(ctx, request.(GetArtifactDepsRequestObject))
@@ -864,10 +930,11 @@ func (sh *strictHandler) GetArtifactDeps(w http.ResponseWriter, r *http.Request,
 }
 
 // GetArtifactVulns operation middleware
-func (sh *strictHandler) GetArtifactVulns(w http.ResponseWriter, r *http.Request, digest string) {
+func (sh *strictHandler) GetArtifactVulns(w http.ResponseWriter, r *http.Request, digest string, params GetArtifactVulnsParams) {
 	var request GetArtifactVulnsRequestObject
 
 	request.Digest = digest
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetArtifactVulns(ctx, request.(GetArtifactVulnsRequestObject))
@@ -890,10 +957,11 @@ func (sh *strictHandler) GetArtifactVulns(w http.ResponseWriter, r *http.Request
 }
 
 // GetPackagePurls operation middleware
-func (sh *strictHandler) GetPackagePurls(w http.ResponseWriter, r *http.Request, purl string) {
+func (sh *strictHandler) GetPackagePurls(w http.ResponseWriter, r *http.Request, purl string, params GetPackagePurlsParams) {
 	var request GetPackagePurlsRequestObject
 
 	request.Purl = purl
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetPackagePurls(ctx, request.(GetPackagePurlsRequestObject))
@@ -916,10 +984,11 @@ func (sh *strictHandler) GetPackagePurls(w http.ResponseWriter, r *http.Request,
 }
 
 // GetPackageDeps operation middleware
-func (sh *strictHandler) GetPackageDeps(w http.ResponseWriter, r *http.Request, purl string) {
+func (sh *strictHandler) GetPackageDeps(w http.ResponseWriter, r *http.Request, purl string, params GetPackageDepsParams) {
 	var request GetPackageDepsRequestObject
 
 	request.Purl = purl
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetPackageDeps(ctx, request.(GetPackageDepsRequestObject))

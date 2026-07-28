@@ -220,7 +220,7 @@ func Test_GetArtifactVulns_HTTP(t *testing.T) {
 		if !success {
 			t.Fatalf("expected 200 response, got %T: %v", res, res)
 		}
-		if len(ok.VulnerabilityListJSONResponse) == 0 {
+		if len(ok.VulnerabilityListJSONResponse.VulnerabilityList) == 0 {
 			t.Errorf("expected at least one vulnerability in response")
 		}
 	})
@@ -261,7 +261,7 @@ func Test_GetPackageVulns_HTTP(t *testing.T) {
 		if !success {
 			t.Fatalf("expected 200 response, got %T: %v", res, res)
 		}
-		if len(ok.VulnerabilityListJSONResponse) == 0 {
+		if len(ok.VulnerabilityListJSONResponse.VulnerabilityList) == 0 {
 			t.Errorf("expected at least one vulnerability in response")
 		}
 	})

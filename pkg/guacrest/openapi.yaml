@@ -71,6 +71,7 @@ paths:
           description: URL-encoded Package URL (purl)
           schema:
             type: string
+        - $ref: "#/components/parameters/PaginationSpec"
       responses:
         "200":
           $ref: "#/components/responses/PurlList"
@@ -99,12 +100,13 @@ paths:
           in: query
           required: false
           description: >
-            A flag to include vulnerabilities of the dependencies. If true, the 
-            response will include vulnerabilities for the purl and its dependencies 
+            A flag to include vulnerabilities of the dependencies. If true, the
+            response will include vulnerabilities for the purl and its dependencies
             instead of the vulnerabilities of just the purl.
           schema:
             type: boolean
             default: false
+        - $ref: "#/components/parameters/PaginationSpec"
       responses:
         "200":
           $ref: "#/components/responses/VulnerabilityList"
@@ -129,6 +131,7 @@ paths:
           description: URL-encoded Package URL (purl)
           schema:
             type: string
+        - $ref: "#/components/parameters/PaginationSpec"
       responses:
         "200":
           $ref: "#/components/responses/PurlList"
@@ -149,6 +152,7 @@ paths:
           description: Digest, the second part from artifact identifier in the format <algorithm:digest>
           schema:
             type: string
+        - $ref: "#/components/parameters/PaginationSpec"
       responses:
         "200":
           $ref: "#/components/responses/VulnerabilityList"
@@ -169,6 +173,7 @@ paths:
           description: Digest, the second part from artifact identifier in the format <algorithm:digest>
           schema:
             type: string
+        - $ref: "#/components/parameters/PaginationSpec"
       responses:
         "200":
           $ref: "#/components/responses/PurlList"
@@ -294,17 +299,33 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/PackageName"
+            type: object
+            required:
+              - PaginationInfo
+              - PackageNameList
+            properties:
+              PaginationInfo:
+                $ref: "#/components/schemas/PaginationInfo"
+              PackageNameList:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PackageName"
     VulnerabilityList:
       description: A list of vulnerabilities associated with the package or artifact
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/Vulnerability"
+            type: object
+            required:
+              - PaginationInfo
+              - VulnerabilityList
+            properties:
+              PaginationInfo:
+                $ref: "#/components/schemas/PaginationInfo"
+              VulnerabilityList:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vulnerability"
     DependencyList:
       description: A list of dependencies associated with the package or artifact
       content:
