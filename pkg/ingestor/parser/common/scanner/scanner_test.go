@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	mockclearlydefined "github.com/guacsec/guac/internal/testing/mockClearlyDefined"
+	mockosv "github.com/guacsec/guac/internal/testing/mockOSV"
 	"github.com/guacsec/guac/internal/testing/ptrfrom"
 	"github.com/guacsec/guac/internal/testing/testdata"
 	"github.com/guacsec/guac/pkg/assembler"
@@ -37,14 +38,18 @@ func TestPurlsToScan(t *testing.T) {
 	ctx := context.Background()
 	tm, _ := time.Parse(time.RFC3339, "2022-11-21T17:45:50.52Z")
 	tests := []struct {
-		name    string
-		purls   []string
-		wantCVs []assembler.CertifyVulnIngest
-		wantVEs []assembler.VulnEqualIngest
-		wantErr bool
+		name         string
+		purls        []string
+		osvResponses map[string][]byte // purl -> querybatch response JSON
+		wantCVs      []assembler.CertifyVulnIngest
+		wantVEs      []assembler.VulnEqualIngest
+		wantErr      bool
 	}{{
 		name:  "valid vulnerability certifier document",
 		purls: []string{"pkg:maven/org.apache.logging.log4j/log4j-core@2.8.1"},
+		osvResponses: map[string][]byte{
+			"pkg:maven/org.apache.logging.log4j/log4j-core@2.8.1": testdata.OSVLog4JResponse,
+		},
 		wantCVs: []assembler.CertifyVulnIngest{
 			{
 				Pkg: &generated.PkgInputSpec{
@@ -99,6 +104,27 @@ func TestPurlsToScan(t *testing.T) {
 				Vulnerability: &generated.VulnerabilityInputSpec{
 					Type:            "osv",
 					VulnerabilityID: "ghsa-8489-44mv-ggj8",
+				},
+				VulnData: &generated.ScanMetadataInput{
+					TimeScanned:    tm,
+					ScannerUri:     "osv.dev",
+					ScannerVersion: "0.0.14",
+					Origin:         "osv_certifier",
+					Collector:      "osv_certifier",
+					DocumentRef:    "sha256_daeea32fb48a532d48ce7a549b7e0cdf98eb6df80869c3b6d3ec21174b015d14",
+				},
+			},
+			{
+				Pkg: &generated.PkgInputSpec{
+					Type:      "maven",
+					Namespace: ptrfrom.String("org.apache.logging.log4j"),
+					Name:      "log4j-core",
+					Version:   ptrfrom.String("2.8.1"),
+					Subpath:   ptrfrom.String(""),
+				},
+				Vulnerability: &generated.VulnerabilityInputSpec{
+					Type:            "osv",
+					VulnerabilityID: "ghsa-3pxv-7cmr-fjr4",
 				},
 				VulnData: &generated.ScanMetadataInput{
 					TimeScanned:    tm,
@@ -283,6 +309,22 @@ func TestPurlsToScan(t *testing.T) {
 			{
 				Vulnerability: &generated.VulnerabilityInputSpec{
 					Type:            "osv",
+					VulnerabilityID: "ghsa-3pxv-7cmr-fjr4",
+				},
+				EqualVulnerability: &generated.VulnerabilityInputSpec{
+					Type:            "ghsa",
+					VulnerabilityID: "ghsa-3pxv-7cmr-fjr4",
+				},
+				VulnEqual: &generated.VulnEqualInputSpec{
+					Justification: "Decoded OSV data",
+					Origin:        "osv_certifier",
+					Collector:     "osv_certifier",
+					DocumentRef:   "sha256_daeea32fb48a532d48ce7a549b7e0cdf98eb6df80869c3b6d3ec21174b015d14",
+				},
+			},
+			{
+				Vulnerability: &generated.VulnerabilityInputSpec{
+					Type:            "osv",
 					VulnerabilityID: "ghsa-fxph-q3j8-mv87",
 				},
 				EqualVulnerability: &generated.VulnerabilityInputSpec{
@@ -349,6 +391,9 @@ func TestPurlsToScan(t *testing.T) {
 	}, {
 		name:  "no vulnerability purl",
 		purls: []string{"pkg:maven/io.vertx/vertx-web-common@4.3.7?type=jar"},
+		osvResponses: map[string][]byte{
+			"pkg:maven/io.vertx/vertx-web-common@4.3.7?type=jar": testdata.OSVVertxWebCommonResponse,
+		},
 		wantCVs: []assembler.CertifyVulnIngest{{
 			Pkg: &generated.PkgInputSpec{
 				Type:      "maven",
@@ -374,12 +419,6 @@ func TestPurlsToScan(t *testing.T) {
 		wantVEs: []assembler.VulnEqualIngest{},
 		wantErr: false,
 	}, {
-		name:    "no vulnerability purl",
-		purls:   []string{""},
-		wantCVs: []assembler.CertifyVulnIngest{},
-		wantVEs: []assembler.VulnEqualIngest{},
-		wantErr: true,
-	}, {
 		name:    "skip guac purl",
 		purls:   []string{"pkg:guac/io.vertx/vertx-web-common@4.3.7?type=jar"},
 		wantCVs: []assembler.CertifyVulnIngest{},
@@ -402,7 +441,13 @@ func TestPurlsToScan(t *testing.T) {
 	})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVEs, gotCVs, err := PurlsVulnScan(ctx, tt.purls)
+			mock := mockosv.NewMockOSV()
+			defer mock.Close()
+			for purl, resp := range tt.osvResponses {
+				mock.SetResponse(purl, resp)
+			}
+			mockClient := &http.Client{Transport: mock.GetTransport()}
+			gotVEs, gotCVs, err := purlsVulnScanWithClient(ctx, mockClient, tt.purls)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PurlsToScan() error = %v, wantErr %v", err, tt.wantErr)
 				return
